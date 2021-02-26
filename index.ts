@@ -1,3 +1,4 @@
+import { exec } from "child_process"
 import * as http from "http"
 
 type TargetHostType = ["TG1" | "TG2", "H1" | "H2" | "H3"];
@@ -7,21 +8,29 @@ const hostCount = {H1: 0, H2: 0, H3: 0}
 
 let done = 0
 
-for (let i = 0; i < 100; i++) {
-  http.get("http://Fooba-alb8A-1GDDA2023SOVI-1691471715.us-east-1.elb.amazonaws.com", (res) => {
-    let rawData = ""
-    res.on("data", (chunk: string) => (rawData += chunk))
-    res.on("end", () => {
-      const [target, host]: TargetHostType = rawData.split(":") as TargetHostType;
+exec("cdk list", (_: any , stdout: string, __: string) => {
+  const stackName = stdout.trim();
 
-      targetCount[target]++
-      hostCount[host]++
-      done++
+  exec(`aws cloudformation describe-stacks --stack-name ${stackName} --query "Stacks[0].Outputs[0].OutputValue" --output text`, (_: any , stdout: string, __: string) => {
+    const dnsName = stdout.trim();
 
-      if (done >= 100) {
-        console.table(targetCount)
-        console.table(hostCount)
-      }
-    })
+    for (let i = 0; i < 100; i++) {
+      http.get(`http://${dnsName}`, (res) => {
+        let rawData = ""
+        res.on("data", (chunk: string) => (rawData += chunk))
+        res.on("end", () => {
+          const [target, host]: TargetHostType = rawData.split(":") as TargetHostType;
+    
+          targetCount[target]++
+          hostCount[host]++
+          done++
+    
+          if (done >= 100) {
+            console.table(targetCount)
+            console.table(hostCount)
+          }
+        })
+      })
+    }
   })
-}
+})

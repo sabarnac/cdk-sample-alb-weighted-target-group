@@ -1,14 +1,14 @@
-# Welcome to your CDK TypeScript project!
+# cdk-sample-alb-weighted-target-group
 
-This is a blank project for TypeScript development with CDK.
+## Pre-requisites
+* Install AWS CLI
+* Install TypeScript
+* Install CDK
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+## Configure
+The weights of the target groups can be defined in `config/weights.json`
 
-## Useful commands
-
- * `npm run build`   compile typescript to js
- * `npm run watch`   watch for changes and compile
- * `npm run test`    perform the jest unit tests
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk synth`       emits the synthesized CloudFormation template
+## Execute
+* Run `npm run bootstrap` to bootstrap CDK resources in your AWS account.
+* Run `npm run deploy` to deploy the `FoobarStack` into your AWS account.
+* After you've confirmed the application is running, run `npm run count` to get the look at the traffic distribution between the target groups and hosts.

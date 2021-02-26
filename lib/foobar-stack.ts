@@ -15,6 +15,8 @@ import {
 import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, ListenerAction } from "@aws-cdk/aws-elasticloadbalancingv2"
 import { InstanceTarget } from "@aws-cdk/aws-elasticloadbalancingv2-targets"
 import * as cdk from "@aws-cdk/core"
+import { CfnOutput } from "@aws-cdk/core";
+import * as weights from "../config/weights.json"
 
 export class FoobarStack extends cdk.Stack {
   public readonly vpc: Vpc;
@@ -22,6 +24,7 @@ export class FoobarStack extends cdk.Stack {
   public readonly albSecurityGroup: SecurityGroup;
   public readonly instances: Record<string, Instance>;
   public readonly alb: ApplicationLoadBalancer;
+  public readonly outputs: CfnOutput[];
 
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -59,7 +62,7 @@ export class FoobarStack extends cdk.Stack {
       defaultAction: ListenerAction.weightedForward(
         [
           {
-            weight: 1,
+            weight: weights.TG1,
             targetGroup: new ApplicationTargetGroup(this, "TG1", {
               targetGroupName: "TG1",
               protocol: ApplicationProtocol.HTTP,
@@ -75,7 +78,7 @@ export class FoobarStack extends cdk.Stack {
             })
           },
           {
-            weight: 1,
+            weight: weights.TG2,
             targetGroup: new ApplicationTargetGroup(this, "TG2", {
               targetGroupName: "TG2",
               protocol: ApplicationProtocol.HTTP,
@@ -90,6 +93,13 @@ export class FoobarStack extends cdk.Stack {
         ]
       )
     })
+
+    this.outputs = [
+      new CfnOutput(this, "AlbDnsName", {
+        exportName: "AlbDnsName",
+        value: this.alb.loadBalancerDnsName
+      })
+    ]
   }
 
   private createInstance = (name: string, target: string, host: string): Instance => {
