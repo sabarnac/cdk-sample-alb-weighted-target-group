@@ -9,7 +9,7 @@ const targetCount = {TG1: 0, TG2: 0}
 const hostCount = {H1: 0, H2: 0, H3: 0}
 let done = 0
 
-const httpQueue = new HttpQueue(50);
+const httpQueue = new HttpQueue(100);
 
 console.log("Getting deployed stack name");
 exec("cdk list", (_: any , stdout: string, __: string) => {
