@@ -11,12 +11,12 @@ import {
   SubnetType,
   UserData,
   Vpc,
-} from "@aws-cdk/aws-ec2"
-import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, ListenerAction } from "@aws-cdk/aws-elasticloadbalancingv2"
-import { InstanceTarget } from "@aws-cdk/aws-elasticloadbalancingv2-targets"
-import * as cdk from "@aws-cdk/core"
+} from "@aws-cdk/aws-ec2";
+import { ApplicationLoadBalancer, ApplicationProtocol, ApplicationTargetGroup, ListenerAction } from "@aws-cdk/aws-elasticloadbalancingv2";
+import { InstanceTarget } from "@aws-cdk/aws-elasticloadbalancingv2-targets";
+import * as cdk from "@aws-cdk/core";
 import { CfnOutput } from "@aws-cdk/core";
-import * as weights from "../config/weights.json"
+import * as weights from "../config/weights.json";
 
 export class FoobarStack extends cdk.Stack {
   public readonly vpc: Vpc;
@@ -32,7 +32,7 @@ export class FoobarStack extends cdk.Stack {
     this.vpc = new Vpc(this, "vpc");
 
     this.securityGroup = new SecurityGroup(this, "sg", {
-      vpc: this.vpc
+      vpc: this.vpc,
     });
 
     this.securityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(8080));
@@ -45,66 +45,61 @@ export class FoobarStack extends cdk.Stack {
     this.albSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(80));
 
     this.instances = {
-      "H1": this.createInstance("instance-1", "TG1", "H1"),
-      "H2": this.createInstance("instance-2", "TG1", "H2"),
-      "H3": this.createInstance("instance-3", "TG2", "H3")
+      H1: this.createInstance("instance-1", "TG1", "H1"),
+      H2: this.createInstance("instance-2", "TG1", "H2"),
+      H3: this.createInstance("instance-3", "TG2", "H3"),
     };
 
     this.alb = new ApplicationLoadBalancer(this, "alb", {
       vpc: this.vpc,
       securityGroup: this.albSecurityGroup,
       http2Enabled: false,
-      internetFacing: true
-    })
+      internetFacing: true,
+    });
 
     this.alb.addListener("listener", {
       protocol: ApplicationProtocol.HTTP,
-      defaultAction: ListenerAction.weightedForward(
-        [
-          {
-            weight: weights.TG1,
-            targetGroup: new ApplicationTargetGroup(this, "TG1", {
-              targetGroupName: "TG1",
-              protocol: ApplicationProtocol.HTTP,
-              port: 8080,
-              vpc: this.vpc,
-              healthCheck: {
-                enabled: true
-              },
-              targets: [
-                new InstanceTarget(this.instances.H1, 8080),
-                new InstanceTarget(this.instances.H2, 8080)
-              ]
-            })
-          },
-          {
-            weight: weights.TG2,
-            targetGroup: new ApplicationTargetGroup(this, "TG2", {
-              targetGroupName: "TG2",
-              protocol: ApplicationProtocol.HTTP,
-              port: 8080,
-              vpc: this.vpc,
-              healthCheck: {
-                enabled: true
-              },
-              targets: [new InstanceTarget(this.instances.H3, 8080)]
-            })
-          }
-        ]
-      )
-    })
+      defaultAction: ListenerAction.weightedForward([
+        {
+          weight: weights.TG1,
+          targetGroup: new ApplicationTargetGroup(this, "TG1", {
+            targetGroupName: "TG1",
+            protocol: ApplicationProtocol.HTTP,
+            port: 8080,
+            vpc: this.vpc,
+            healthCheck: {
+              enabled: true,
+            },
+            targets: [new InstanceTarget(this.instances.H1, 8080), new InstanceTarget(this.instances.H2, 8080)],
+          }),
+        },
+        {
+          weight: weights.TG2,
+          targetGroup: new ApplicationTargetGroup(this, "TG2", {
+            targetGroupName: "TG2",
+            protocol: ApplicationProtocol.HTTP,
+            port: 8080,
+            vpc: this.vpc,
+            healthCheck: {
+              enabled: true,
+            },
+            targets: [new InstanceTarget(this.instances.H3, 8080)],
+          }),
+        },
+      ]),
+    });
 
     this.outputs = [
       new CfnOutput(this, "AlbDnsName", {
         exportName: "AlbDnsName",
-        value: this.alb.loadBalancerDnsName
-      })
-    ]
+        value: this.alb.loadBalancerDnsName,
+      }),
+    ];
   }
 
   private createInstance = (name: string, target: string, host: string): Instance => {
     const userData = UserData.custom(
-`#!/bin/bash
+      `#!/bin/bash
 exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 cd /home/ec2-user
 echo "Starting user script"
@@ -124,21 +119,21 @@ echo "})" >> index.js
 echo "" >> index.js
 echo "server.listen(8080)" >> index.js
 echo "Created application. Starting application..."
-node index.js`
-    )
+node index.js`,
+    );
 
     return new Instance(this, name, {
       instanceType: InstanceType.of(InstanceClass.T2, InstanceSize.MICRO),
       machineImage: MachineImage.latestAmazonLinux({
-        generation: AmazonLinuxGeneration.AMAZON_LINUX_2
+        generation: AmazonLinuxGeneration.AMAZON_LINUX_2,
       }),
       vpc: this.vpc,
       vpcSubnets: {
-        subnetType: SubnetType.PUBLIC
+        subnetType: SubnetType.PUBLIC,
       },
       securityGroup: this.securityGroup,
       userData: userData,
       userDataCausesReplacement: true,
     });
-  }
+  };
 }
